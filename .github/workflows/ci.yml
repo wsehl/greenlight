@@ -1,0 +1,39 @@
+name: Go Test Workflow
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    name: Run go test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: '1.22.1'
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v3
+
+    - name: Get dependencies
+      run: |
+        go get -v -t -d ./...
+        if [ -f Gopkg.lock ]; then
+            # Gopkg.lock is present, project uses dep
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+            dep ensure
+        elif [ -f go.mod ]; then
+            # go.mod is present, project uses Go modules
+            go mod tidy
+        fi
+
+    - name: Test
+      run: go test ./... -v
